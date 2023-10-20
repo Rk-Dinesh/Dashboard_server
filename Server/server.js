@@ -1,5 +1,7 @@
 const express = require("express");
 const bodyparser = require("body-parser");
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
 const mongoose = require("mongoose");
 const Doctor = require("./models/doctorSchema")
 const Patient = require("./models/patientSchema")
@@ -8,12 +10,13 @@ const MOXFQ = require("./models/moxfq_Schema")
 const SF_36 = require("./models/sf_36")
 const Image = require("./models/image_model")
 const Data = require("./models/dataSchema")
+const User = require('./models/userSchema')
 const cors = require("cors")
 const app = express();
 
 const PORT = 3001;
-
-const DB_URL = "mongodb://0.0.0.0:27017/pain_management"
+const SECRET_KEY = "HACKWIT";
+const DB_URL = "mongodb://0.0.0.0:27017/pain_management";
 
 
 
@@ -25,6 +28,56 @@ mongoose
 
 app.use(bodyparser.json());
 app.use(cors());
+
+
+app.get('/register', async (req,res) => {
+    
+    try {
+        const reg = await User.find();
+        res.status(200).send(reg);
+    } catch (error) {
+        res.status(400).send(error.message)
+    }
+})
+
+app.post("/api/register", async (req, res) => {
+    const { name,username, password } = req.body;
+    if (!name || !username || !password) {
+        return res.status(400).json({ message: "Username and password are required" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const customer = new User({ name, username, password: hashedPassword });
+    try {
+        await customer.save();
+        res.json({ message: "User Saved Successfully" });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error Occurred" });
+    }
+});
+
+app.post("/api/login", async (req, res) => {
+    const { username, password } = req.body;
+    const customer = await User.findOne({ username });
+
+    if (!customer) {
+        return res.status(401).json({ message: "Authentication failed! User doesnot exist" });
+    }
+
+    const passwordMatch = await bcrypt.compare(password, customer.password);
+
+    if (!passwordMatch) {
+        return res.status(401).json({ message: "Authentication failed! wrong Password" });
+    }
+
+    const token = jwt.sign(
+        { username: customer.username , role: "admin"},
+        SECRET_KEY,
+        { expiresIn: "1h" });
+
+    res.json({ token });
+});
 
 
 // Doctor Schema:
