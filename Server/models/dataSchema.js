@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const dataSchema = new mongoose.Schema({
-  email: String, // New field for storing the email
+  email: String, 
   code: String,
   condition: String,
   userColumn1: String,
