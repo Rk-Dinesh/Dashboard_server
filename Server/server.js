@@ -11,6 +11,7 @@ const SF_36 = require("./models/sf_36")
 const Image = require("./models/image_model")
 const Data = require("./models/dataSchema")
 const User = require('./models/userSchema')
+const PatientInfo = require('./models/patientInfo')
 const cors = require("cors")
 const app = express();
 
@@ -292,6 +293,25 @@ app.post('/saveData', (req, res) => {
         });
 });
 
+app.post('/patieninfos', async (req, res) => {
+    const value = new PatientInfo(req.body);
+    try {
+        const details = await value.save();
+        res.status(200).send(details);
+    } catch (error) {
+        res.status(400).send(error.message)
+    }
+})
+
+app.get('/patientinfo', async (req, res) => {
+    try {
+        const email = req.query.email;
+        const detail = await PatientInfo.find({ email: email });
+        res.status(200).send(detail);
+    } catch (error) {
+        res.status(400).send(error.message);
+    }
+});
 
 
 app.listen(PORT, () => {
